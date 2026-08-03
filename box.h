@@ -16,15 +16,15 @@ struct box {
 
 	__host__ __device__ bool hit(const ray& r, float ray_tmin, float ray_tmax) const {
 		float tmin, tmax, tymin, tymax, tzmin, tzmax;
-		float divx = 1 / r.dir.x;
-		if (r.dir.x >= 0) {
+		float divx = 1.0f / r.dir.x;
+		if (r.dir.x >= 0.0f) {
 			tmin = (bounds[0].x - r.orig.x) * divx;
 			tmax = (bounds[1].x - r.orig.x) * divx;
 		} else {
 			tmin = (bounds[1].x - r.orig.x) * divx;
 			tmax = (bounds[0].x - r.orig.x) * divx;
 		}
-		if (r.dir.y >= 0) {
+		if (r.dir.y >= 0.0f) {
 			tymin = (bounds[0].y - r.orig.y) / r.dir.y;
 			tymax = (bounds[1].y - r.orig.y) / r.dir.y;
 		} else {
@@ -34,7 +34,7 @@ struct box {
 		if ((tmin > tymax) || (tymin > tmax)) return false;
 		if (tymin > tmin) tmin = tymin;
 		if (tymax < tmax) tmax = tymax;
-		if (r.dir.z >= 0) {
+		if (r.dir.z >= 0.0f) {
 			tzmin = (bounds[0].z - r.orig.z) / r.dir.z;
 			tzmax = (bounds[1].z - r.orig.z) / r.dir.z;
 		} else {

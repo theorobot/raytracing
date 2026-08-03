@@ -23,11 +23,11 @@ void write_image(vec3* colors, int width, int height, std::string file) {
 
 __host__ __device__ vec3 ray_color(const ray& r, const scene& world, int depth, vec3 bg_color, uint32_t& seed) {
 	ray current_ray = r;
-	vec3 attenuation(1.0, 1.0, 1.0);
+	vec3 attenuation(1.0f, 1.0f, 1.0f);
 
 	for (int bounce = 0; bounce < depth; ++bounce) {
 		hit_record rec;
-		if (world.hit(current_ray, 0.001, 1000000.0, rec)) {
+		if (world.hit(current_ray, 0.001f, 1000000.0f, rec)) {
 			ray scattered;
 			vec3 atten;
 			if (rec.mat->scatter(current_ray, rec, atten, scattered, seed)) {
@@ -43,13 +43,13 @@ __host__ __device__ vec3 ray_color(const ray& r, const scene& world, int depth, 
 		}
 	}
 
-	return vec3(0.0, 0.0, 0.0);
+	return vec3(0.0f, 0.0f, 0.0f);
 }
 
 __global__ void setPixelsGPU(camera cam, scene world, vec3* frame) {
 	int workIndex = threadIdx.x + blockIdx.x*blockDim.x;
 	if (workIndex >= cam.width*cam.height) return;
-	vec3 color(0.0, 0.0, 0.0);
+	vec3 color(0.0f, 0.0f, 0.0f);
 	int x = workIndex % cam.width;
 	int y = workIndex / cam.width;
 	uint32_t seed = workIndex;
@@ -58,9 +58,9 @@ __global__ void setPixelsGPU(camera cam, scene world, vec3* frame) {
 		color += ray_color(r, world, cam.max_depth, cam.background_color, seed);
 	}
 	color /= cam.samples_per_pixel;
-	color.x = util::clamp(color.x, 0.0, 0.999);
-	color.y = util::clamp(color.y, 0.0, 0.999);
-	color.z = util::clamp(color.z, 0.0, 0.999);
+	color.x = util::clamp(color.x, 0.0f, 0.999f);
+	color.y = util::clamp(color.y, 0.0f, 0.999f);
+	color.z = util::clamp(color.z, 0.0f, 0.999f);
 	frame[workIndex] = color;
 }
 
@@ -131,9 +131,6 @@ void render_video(scene& world, camera& cam, uint32_t& seed, std::string output_
 	for (int frame = 0; frame < 30; frame++) {
 		std::string frame_file = "images/video_tmp/frame" + std::to_string(frame+1) + ".png";
 		raytrace(world, cam, seed, frame_file);
-		for (int s = 0; s < world.spheres.num_spheres; s++) {
-			world.spheres.spheres[s].center += world.spheres.spheres[s].velocity;
-		}
 	}
 
 	std::string ffmpeg_cmd = "ffmpeg -loglevel quiet -framerate 30 -i images/video_tmp/frame%d.png -c:v libx264 -crf 18 -pix_fmt yuv420p " + output_file;

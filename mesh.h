@@ -58,19 +58,19 @@ struct vec_mesh {
 	}
 
 	void set_bounding_box() {
-		float xmin, ymin, zmin = 1000000.0f;
-		float xmax, ymax, zmax = -1000000.0f;
+		vec3 bound_min = vertices[0];
+		vec3 bound_max = vertices[0];
 		for (vec3& v : vertices) {
-			xmin = std::fmin(xmin, v.x);
-			ymin = std::fmin(ymin, v.y);
-			zmin = std::fmin(zmin, v.z);
-			xmax = std::fmax(xmax, v.x);
-			ymax = std::fmax(ymax, v.y);
-			zmax = std::fmax(zmax, v.z);
+			bound_min.x = std::fmin(bound_min.x, v.x);
+			bound_min.y = std::fmin(bound_min.y, v.y);
+			bound_min.z = std::fmin(bound_min.z, v.z);
+			bound_max.x = std::fmax(bound_max.x, v.x);
+			bound_max.y = std::fmax(bound_max.y, v.y);
+			bound_max.z = std::fmax(bound_max.z, v.z);
 		}
 
-		bounding_box.bounds[0] = vec3(xmin-0.01, ymin-0.01, zmin-0.01);
-		bounding_box.bounds[1] = vec3(xmax+0.01, ymax+0.01, zmax+0.01);
+		bounding_box.bounds[0] = bound_min;
+		bounding_box.bounds[1] = bound_max;
 	}
 
 	void set_normals() {
@@ -95,23 +95,23 @@ struct mesh {
 	__host__ __device__ bool hit_triangle(const triangle& tri, const vec3& normal, const ray& r, float ray_tmin, float ray_tmax, hit_record& rec) {
 		vec3 e1 = vertices[tri.v1] - vertices[tri.v0];
 		vec3 e2 = vertices[tri.v2] - vertices[tri.v0];
-		if (dot(normal, r.dir) > 0.0) return false;
+		if (dot(normal, r.dir) > 0.0f) return false;
 
 		vec3 ray_cross_e2 = cross(r.dir, e2);
 		float denom = dot(e1, ray_cross_e2);
 
-		if (util::abs(denom) < 1e-6) return false;
+		if (util::abs(denom) < 1e-6f) return false;
 
-		float inv_denom = 1.0 / denom;
+		float inv_denom = 1.0f / denom;
 		vec3 s = r.orig - vertices[tri.v0];
 		float u = inv_denom * dot(s, ray_cross_e2);
 
-		if (u < -1e-6 || u-1 > 1e-6) return false;
+		if (u < -1e-6f || u-1.0f > 1e-6f) return false;
 
 		vec3 s_cross_e1 = cross(s, e1);
 		float v = inv_denom * dot(r.dir, s_cross_e1);
 
-		if (v < -1e-6 || u+v-1 > 1e-6) return false;
+		if (v < -1e-6f || u+v-1.0f > 1e-6f) return false;
 
 		float t = inv_denom * dot(e2, s_cross_e1);
 

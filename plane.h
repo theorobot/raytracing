@@ -21,7 +21,7 @@ struct plane {
 
 	__host__ __device__ bool hit(const ray& r, const float ray_tmin, const float ray_tmax, hit_record& rec) {
 		float denom = dot(n, r.dir);
-		if (util::abs(denom) >= 1e-6) {
+		if (util::abs(denom) >= 1e-6f) {
 			float t = dot(p-r.orig, n) / denom;
 			if (t > ray_tmin && t < ray_tmax) {
 				rec.t = t;

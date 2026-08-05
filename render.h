@@ -114,14 +114,8 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
 	cudaFree(devFrame);
 	cudaFree(world.spheres.spheres);
 	cudaFree(world.planes.planes);
-
-	std::vector<mesh> host_meshes(world.meshes.num_meshes);
-	cudaMemcpy(host_meshes.data(), world.meshes.meshes, world.meshes.num_meshes*sizeof(mesh), cudaMemcpyDeviceToHost);
-
-	for (mesh& m : host_meshes) {
-		cudaFree(m.vertices);
-		cudaFree(m.triangles);
-	}
+    cudaFree(world.meshes.vertices);
+    cudaFree(world.meshes.triangles);
 	cudaFree(world.meshes.meshes);
 }
 
@@ -144,21 +138,39 @@ void render_video(scene& world, camera& cam, uint32_t& seed, std::string output_
 }
 
 void create_scene(scene& world, std::vector<sphere> spheres, std::vector<plane> planes, std::vector<vec_mesh> vec_meshes) {
-	std::vector<mesh> meshes;	
+	std::vector<mesh> meshes;
+    std::vector<vec3> vertices;
+    std::vector<triangle> triangles;
+    int num_triangles = 0;
+    int num_vertices = 0;
 	for (vec_mesh& vm : vec_meshes) {
 		mesh m;
-		cudaMalloc(&m.vertices, vm.vertices.size()*sizeof(vec3));
-		cudaMemcpy(m.vertices, vm.vertices.data(), vm.vertices.size()*sizeof(vec3), cudaMemcpyHostToDevice);
-		m.num_vertices = vm.vertices.size();
-		cudaMalloc(&m.triangles, vm.triangles.size()*sizeof(triangle));
-		cudaMemcpy(m.triangles, vm.triangles.data(), vm.triangles.size()*sizeof(triangle), cudaMemcpyHostToDevice);
-		cudaMalloc(&m.normals, vm.normals.size()*sizeof(vec3));
-		cudaMemcpy(m.normals, vm.normals.data(), vm.normals.size()*sizeof(vec3), cudaMemcpyHostToDevice);
-		m.num_triangles = vm.triangles.size();
-		m.mat = vm.mat;
-		m.bounding_box = vm.bounding_box;
-		meshes.push_back(m);
+        m.triangles_start = num_triangles;
+        m.num_triangles = vm.triangles.size();
+        m.mat = vm.mat;
+        m.bounding_box = vm.bounding_box;
+        meshes.push_back(m);
+        vertices.insert(vertices.end(), vm.vertices.begin(), vm.vertices.end());
+        triangles.insert(triangles.end(), vm.triangles.begin(), vm.triangles.end());
+        for (int t = num_triangles; t < triangles.size(); t++) {
+            triangles[t].v0 += num_vertices;
+            triangles[t].v1 += num_vertices;
+            triangles[t].v2 += num_vertices;
+        }
+        num_triangles += vm.triangles.size();
+        num_vertices += vm.vertices.size();
 	}
+
+    cudaMalloc(&world.meshes.vertices, vertices.size()*sizeof(vec3));
+    cudaMemcpy(world.meshes.vertices, vertices.data(), vertices.size()*sizeof(vec3), cudaMemcpyHostToDevice);
+
+    cudaMalloc(&world.meshes.triangles, triangles.size()*sizeof(triangle));
+    cudaMemcpy(world.meshes.triangles, triangles.data(), triangles.size()*sizeof(triangle), cudaMemcpyHostToDevice);
+    world.meshes.num_triangles = triangles.size();
+
+    cudaMalloc(&world.meshes.meshes, meshes.size()*sizeof(mesh));
+    cudaMemcpy(world.meshes.meshes, meshes.data(), meshes.size()*sizeof(mesh), cudaMemcpyHostToDevice);
+    world.meshes.num_meshes = meshes.size();
 
 	cudaMalloc(&world.spheres.spheres, spheres.size()*sizeof(sphere));
 	cudaMemcpy(world.spheres.spheres, spheres.data(), spheres.size()*sizeof(sphere), cudaMemcpyHostToDevice);
@@ -167,10 +179,6 @@ void create_scene(scene& world, std::vector<sphere> spheres, std::vector<plane> 
 	cudaMalloc(&world.planes.planes, planes.size()*sizeof(plane));
 	cudaMemcpy(world.planes.planes, planes.data(), planes.size()*sizeof(plane), cudaMemcpyHostToDevice);
 	world.planes.num_planes = planes.size();
-
-	cudaMalloc(&world.meshes.meshes, meshes.size()*sizeof(mesh));
-	cudaMemcpy(world.meshes.meshes, meshes.data(), meshes.size()*sizeof(mesh), cudaMemcpyHostToDevice);
-	world.meshes.num_meshes = meshes.size();
 }
 
 #endif

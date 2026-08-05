@@ -8,20 +8,21 @@
 
 struct triangle {
 	int v0, v1, v2;
+    vec3 normal;
 
 	triangle() = default;
 
-	triangle(int v0_, int v1_, int v2_) {
+	triangle(int v0_, int v1_, int v2_, vec3 n) {
 		v0 = v0_;
 		v1 = v1_;
 		v2 = v2_;
+        normal = n;
 	}
 };
 
 struct vec_mesh {
 	std::vector<vec3> vertices;
 	std::vector<triangle> triangles;
-	std::vector<vec3> normals;
 	material mat;
 	box bounding_box;
 
@@ -74,28 +75,24 @@ struct vec_mesh {
 	}
 
 	void set_normals() {
-		normals.resize(triangles.size());
-		for (int t = 0; t < triangles.size(); t++) {
-			vec3 e1 = vertices[triangles[t].v1] - vertices[triangles[t].v0];
-			vec3 e2 = vertices[triangles[t].v2] - vertices[triangles[t].v0];
-			normals[t] = unit_vector(cross(e1, e2));
-		}
-	}
+        for (triangle& t : triangles) {
+            vec3 e1 = vertices[t.v1] - vertices[t.v0];
+            vec3 e2 = vertices[t.v2] - vertices[t.v0];
+            t.normal = unit_vector(cross(e1, e2));
+        }
+    }
 };
 
 struct mesh {
-	vec3* vertices;
-	triangle* triangles;
-	vec3* normals;
-	int num_vertices;
+    int triangles_start;
 	int num_triangles;
 	material mat;
 	box bounding_box;
 
-	__host__ __device__ bool hit_triangle(const triangle& tri, const vec3& normal, const ray& r, float ray_tmin, float ray_tmax, hit_record& rec) {
+	__host__ __device__ bool hit_triangle(const triangle& tri, const vec3* vertices, const ray& r, float ray_tmin, float ray_tmax, hit_record& rec) {
 		vec3 e1 = vertices[tri.v1] - vertices[tri.v0];
 		vec3 e2 = vertices[tri.v2] - vertices[tri.v0];
-		if (dot(normal, r.dir) > 0.0f) return false;
+		if (dot(tri.normal, r.dir) > 0.0f) return false;
 
 		vec3 ray_cross_e2 = cross(r.dir, e2);
 		float denom = dot(e1, ray_cross_e2);
@@ -118,7 +115,7 @@ struct mesh {
 		if (t > ray_tmin && t < ray_tmax) {
 			rec.t = t;
 			rec.p = r.at(t);
-			rec.set_face_normal(r, unit_vector(normal));
+			rec.set_face_normal(r, unit_vector(tri.normal));
 			rec.mat = &mat;
 			return true;
 		}
@@ -126,7 +123,7 @@ struct mesh {
 		return false;
 	}
 
-	__host__ __device__ bool hit(const ray& r, float ray_tmin, float ray_tmax, hit_record& rec) {
+	__host__ __device__ bool hit(const ray& r, const vec3* vertices, const triangle* triangles, float ray_tmin, float ray_tmax, hit_record& rec) {
 		if (!bounding_box.hit(r, ray_tmin, ray_tmax)) return false;
 
 		hit_record temp_rec;
@@ -134,7 +131,7 @@ struct mesh {
 		float closest_so_far = ray_tmax;
 
 		for (int t = 0; t < num_triangles; t++) {
-			if (hit_triangle(triangles[t], normals[t], r, ray_tmin, closest_so_far, temp_rec)) {
+			if (hit_triangle(triangles[triangles_start+t], vertices, r, ray_tmin, closest_so_far, temp_rec)) {
 				hit_anything = true;
 				closest_so_far = temp_rec.t;
 				rec = temp_rec;
@@ -146,6 +143,9 @@ struct mesh {
 };
 
 struct mesh_list {
+    vec3* vertices;
+    triangle* triangles;
+    int num_triangles;
 	mesh* meshes;
 	int num_meshes;
 
@@ -155,7 +155,7 @@ struct mesh_list {
 		float closest_so_far = ray_tmax;
 
 		for (int m = 0; m < num_meshes; m++) {
-			if (meshes[m].hit(r, ray_tmin, closest_so_far, temp_rec)) {
+			if (meshes[m].hit(r, vertices, triangles, ray_tmin, closest_so_far, temp_rec)) {
 				hit_anything = true;
 				closest_so_far = temp_rec.t;
 				rec = temp_rec;

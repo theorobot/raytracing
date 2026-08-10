@@ -1,0 +1,3 @@
+/home/theo/projects/raytracing/build/CMakeFiles/raytracer.dir
+/home/theo/projects/raytracing/build/CMakeFiles/edit_cache.dir
+/home/theo/projects/raytracing/build/CMakeFiles/rebuild_cache.dir

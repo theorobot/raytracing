@@ -29,6 +29,28 @@ struct material {
 		f_refraction_index = refraction_index;
 	}
 
+    void set_lambertian(vec3 albedo) {
+        e_type = lambertian;
+        v_albedo = albedo;
+    }
+
+    void set_metal(vec3 albedo, float fuzz) {
+        e_type = metal;
+        v_albedo = albedo;
+        f_fuzz = fuzz;
+    }
+
+    void set_dielectric(vec3 albedo, float refraction_index) {
+        e_type = dielectric;
+        v_albedo = albedo;
+        f_refraction_index = refraction_index;
+    }
+
+    void set_light(vec3 albedo) {
+        e_type = light;
+        v_albedo = albedo;
+    }
+
 	__host__ __device__ bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, uint32_t& seed);
 
 	__host__ __device__ vec3 emission(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, uint32_t& seed);

@@ -15,9 +15,9 @@ int main() {
 	scene world;
 	uint32_t seed = 0;
 
-	teapots(cam, world, seed);
+	cornell_box(cam, world, seed);
 
-	raytrace(world, cam, seed, "images/image.png");
+	raytrace(world, cam, seed, "renders/image.png");
 
 	return 0;
 }

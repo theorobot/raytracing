@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--dependency-file=CMakeFiles/raytracer.dir/link.d CMakeFiles/raytracer.dir/src/main.cu.o CMakeFiles/raytracer.dir/src/lodepng.cpp.o -o raytracer   -L/usr/local/cuda/targets/x86_64-linux/lib/stubs  -L/usr/local/cuda/targets/x86_64-linux/lib  -lcudadevrt -lcudart_static -lrt -lpthread -ldl

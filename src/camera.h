@@ -10,6 +10,7 @@ public:
 	int width = 400;
 	int height = 225;
 	int samples_per_pixel = 10;
+    int samples_per_frame = 1;
 	int max_depth = 10;
 	float vfov = 90.0f;
 	vec3 lookfrom = vec3(0.0f, 0.0f, 0.0f);

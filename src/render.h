@@ -46,22 +46,18 @@ __host__ __device__ vec3 ray_color(const ray& r, const scene& world, int depth, 
 	return vec3(0.0f, 0.0f, 0.0f);
 }
 
-__global__ void setPixelsGPU(camera cam, scene world, vec3* frame) {
+__global__ void setPixelsGPU(camera cam, scene world, vec3* frame, int sampleOffset) {
 	int workIndex = threadIdx.x + blockIdx.x*blockDim.x;
 	if (workIndex >= cam.width*cam.height) return;
 	vec3 color(0.0f, 0.0f, 0.0f);
 	int x = workIndex % cam.width;
 	int y = workIndex / cam.width;
-	uint32_t seed = workIndex;
-	for (int sample = 0; sample < cam.samples_per_pixel; ++sample) {
+	uint32_t seed = workIndex + sampleOffset * cam.width * cam.height;
+	for (int sample = 0; sample < cam.samples_per_frame; ++sample) {
 		ray r = cam.get_ray(x, y, seed);
 		color += ray_color(r, world, cam.max_depth, cam.background_color, seed);
 	}
-	color /= cam.samples_per_pixel;
-	color.x = util::clamp(color.x, 0.0f, 0.999f);
-	color.y = util::clamp(color.y, 0.0f, 0.999f);
-	color.z = util::clamp(color.z, 0.0f, 0.999f);
-	frame[workIndex] = color;
+	frame[workIndex] += color;
 }
 
 void setPixelsCPU(camera cam, scene world, vec3* frame) {
@@ -84,29 +80,53 @@ void setPixelsCPU(camera cam, scene world, vec3* frame) {
 
 void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string output_file) {
 	vec3* frame = nullptr;
+    vec3* new_frame = nullptr;
 	vec3* devFrame = nullptr;
 
-	cudaMallocHost(&frame, cam.width*cam.height*sizeof(vec3));
+    frame = (vec3*)malloc(cam.width*cam.height*sizeof(vec3));
+    memset(frame, 0, cam.width*cam.height*sizeof(vec3));
+
+    cudaMallocHost(&new_frame, cam.width*cam.height*sizeof(vec3));
 
 	cudaMalloc(&devFrame, cam.width*cam.height*sizeof(vec3));
 	cudaMemset(devFrame, 0, cam.width*cam.height*sizeof(vec3));
 
 	int blocks = cuda::ceil_div(cam.width*cam.height, num_threads);
 
+    std::chrono::high_resolution_clock::time_point first_start = std::chrono::high_resolution_clock::now();
+
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-	setPixelsGPU<<<blocks, num_threads>>>(cam, world, devFrame);
+    for (int sample = 0; sample < cam.samples_per_pixel; sample += cam.samples_per_frame) {
+        std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-	cudaError_t err = cudaDeviceSynchronize();
-	if (err != cudaSuccess) std::cout << cudaGetErrorString(err) << '\n';
+        setPixelsGPU<<<blocks, num_threads>>>(cam, world, devFrame, sample);
 
-	std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
-	std::chrono::duration<double> gpu_exec_time;
-	gpu_exec_time = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
+        cudaError_t err = cudaDeviceSynchronize();
+        if (err != cudaSuccess) std::cout << cudaGetErrorString(err) << '\n';
 
-	std::cout << "GPU Executed in " << gpu_exec_time.count() << " seconds\n";
+        std::chrono::high_resolution_clock::time_point end = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> gpu_exec_time;
+        gpu_exec_time = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
 
-	cudaMemcpy(frame, devFrame, cam.width*cam.height*sizeof(vec3), cudaMemcpyDefault);
+        std::cout << "Finished " << sample+cam.samples_per_frame << "/" << cam.samples_per_pixel << " samples (" << 100*(sample+cam.samples_per_frame) / cam.samples_per_pixel << "%). Time taken: " << gpu_exec_time.count() << " seconds\n";
+    }
+
+    std::chrono::high_resolution_clock::time_point final_end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> total_exec_time;
+    total_exec_time = std::chrono::duration_cast<std::chrono::duration<double>>(final_end-first_start);
+
+    std::cout << "Rendering took " << total_exec_time.count() << " seconds to execute\n";
+
+    cudaMemcpy(frame, devFrame, cam.width*cam.height*sizeof(vec3), cudaMemcpyDeviceToHost);
+
+    for (int pix = 0; pix < cam.width*cam.height; ++pix) {
+        frame[pix] /= cam.samples_per_pixel;
+
+        frame[pix].x = util::clamp(frame[pix].x, 0.0f, 0.999f);
+        frame[pix].y = util::clamp(frame[pix].y, 0.0f, 0.999f);
+        frame[pix].z = util::clamp(frame[pix].z, 0.0f, 0.999f);
+    }
 
 	write_image(frame, cam.width, cam.height, output_file);
 

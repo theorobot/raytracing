@@ -14,7 +14,8 @@ void cornell_box(camera& cam, scene& world, uint32_t& seed) {
 	cam.lookfrom = vec3(278.0f, 278.0f, -800.0f);
 	cam.lookat = vec3(278.0f, 278.0f, 0.0f);
 	cam.vup = vec3(0.0f, 1.0f, 0.0f);
-	cam.defocus_angle = 0.0f;
+	cam.defocus_angle = 10.0f;
+    cam.focus_dist = 1078.0f;
 	cam.initialize();
 
     material red, green, white, headlight;

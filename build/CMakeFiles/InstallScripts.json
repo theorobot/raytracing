@@ -1,7 +1,0 @@
-{
-	"InstallScripts" : 
-	[
-		"/home/theo/projects/raytracing/build/cmake_install.cmake"
-	],
-	"Parallel" : false
-}

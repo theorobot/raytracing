@@ -1,73 +1,36 @@
-#ifndef MATERIAL_H
-#define MATERIAL_H
+#include "material.cuh"
+#include "hit_record.cuh"
 
-#include "vec3.h"
-#include "ray.h"
-#include "settings.h"
+material::material() = default;
 
-enum mat_type {
-	lambertian,
-	metal,
-	dielectric,
-	light
-};
+material::material(mat_type type, vec3 albedo, float fuzz, float refraction_index) {
+    e_type = type;
+    v_albedo = albedo;
+    f_fuzz = fuzz;
+    f_refraction_index = refraction_index;
+}
 
-struct hit_record;
+void material::set_lambertian(vec3 albedo) {
+    e_type = lambertian;
+    v_albedo = albedo;
+}
 
-struct material {
-	mat_type e_type;
-	vec3 v_albedo;
-	float f_fuzz;
-	float f_refraction_index;
+void material::set_metal(vec3 albedo, float fuzz) {
+    e_type = metal;
+    v_albedo = albedo;
+    f_fuzz = fuzz;
+}
 
-	material() = default;
+void material::set_dielectric(vec3 albedo, float refraction_index) {
+    e_type = dielectric;
+    v_albedo = albedo;
+    f_refraction_index = refraction_index;
+}
 
-	material(mat_type type, vec3 albedo=vec3(0.0f,0.0f,0.0f), float fuzz=0.0f, float refraction_index=0.0f) {
-		e_type = type;
-		v_albedo = albedo;
-		f_fuzz = fuzz;
-		f_refraction_index = refraction_index;
-	}
-
-    void set_lambertian(vec3 albedo) {
-        e_type = lambertian;
-        v_albedo = albedo;
-    }
-
-    void set_metal(vec3 albedo, float fuzz) {
-        e_type = metal;
-        v_albedo = albedo;
-        f_fuzz = fuzz;
-    }
-
-    void set_dielectric(vec3 albedo, float refraction_index) {
-        e_type = dielectric;
-        v_albedo = albedo;
-        f_refraction_index = refraction_index;
-    }
-
-    void set_light(vec3 albedo) {
-        e_type = light;
-        v_albedo = albedo;
-    }
-
-	__host__ __device__ bool scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, uint32_t& seed);
-
-	__host__ __device__ vec3 emission(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, uint32_t& seed);
-};
-
-struct hit_record {
-	vec3 p;
-	vec3 normal;
-	float t;
-	bool front_face;
-	material* mat;
-
-	__host__ __device__ void set_face_normal(const ray& r, const vec3& outward_normal) {
-		front_face = dot(r.dir, outward_normal) < 0.0f;
-		normal = front_face ? outward_normal : -outward_normal;
-	}
-};
+void material::set_light(vec3 albedo) {
+    e_type = light;
+    v_albedo = albedo;
+}
 
 __host__ __device__ bool material::scatter(const ray& r_in, const hit_record& rec, vec3& attenuation, ray& scattered, uint32_t& seed) {
 	switch (e_type) {
@@ -122,5 +85,3 @@ __host__ __device__ vec3 material::emission(const ray& r_in, const hit_record& r
 
 	return vec3(0.0f, 0.0f, 0.0f);
 }
-
-#endif

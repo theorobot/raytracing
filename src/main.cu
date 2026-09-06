@@ -1,10 +1,8 @@
 #include "vec3.h"
 #include "ray.h"
-#include "sphere.h"
+#include "sphere.cuh"
 #include "settings.h"
-#include "camera.h"
-#include "material.h"
-#include "scene.h"
+#include "scene.cuh"
 #include "render.h"
 #include "examples.h"
 

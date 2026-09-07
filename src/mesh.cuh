@@ -1,12 +1,12 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 #include "box.cuh"
 #include "material.cuh"
 #include "hit_record.cuh"
-#include "settings.h"
+#include "settings.cuh"
 
 struct triangle {
 	int v0, v1, v2;

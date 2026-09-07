@@ -1,8 +1,8 @@
 #ifndef SPHERE_H
 #define SPHERE_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 #include "material.cuh"
 #include "hit_record.cuh"
 

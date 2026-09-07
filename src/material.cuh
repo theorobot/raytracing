@@ -1,9 +1,9 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include "vec3.h"
-#include "ray.h"
-#include "settings.h"
+#include "vec3.cuh"
+#include "ray.cuh"
+#include "settings.cuh"
 
 struct hit_record;
 

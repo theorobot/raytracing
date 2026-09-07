@@ -1,11 +1,11 @@
 #ifndef PLANE_H
 #define PLANE_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 #include "material.cuh"
 #include "hit_record.cuh"
-#include "settings.h"
+#include "settings.cuh"
 
 struct plane {
 	vec3 p;

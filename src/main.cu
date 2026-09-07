@@ -1,10 +1,10 @@
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 #include "sphere.cuh"
-#include "settings.h"
+#include "settings.cuh"
 #include "scene.cuh"
-#include "render.h"
-#include "examples.h"
+#include "render.cuh"
+#include "examples.cuh"
 
 int main() {
 	cudaFree(0);

@@ -1,8 +1,7 @@
 #ifndef VEC3_H
 #define VEC3_H
 
-#include <cmath>
-#include "settings.h"
+#include "settings.cuh"
 
 struct vec3 {
 	float x, y, z;

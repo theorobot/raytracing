@@ -1,9 +1,5 @@
 #include "camera.cuh"
 
-#include "vec3.h"
-#include "ray.h"
-#include "settings.h"
-
 void camera::initialize() {
     center = lookfrom;
     float theta = vfov * PI / 180.0f;

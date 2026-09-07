@@ -1,11 +1,11 @@
 #ifndef RENDER_H
 #define RENDER_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 #include "camera.cuh"
 #include "scene.cuh"
-#include "settings.h"
+#include "settings.cuh"
 
 void write_image(vec3* colors, int width, int height, std::string file) {
 	std::vector<uint8_t> PNG_pixels(width * height * 4);

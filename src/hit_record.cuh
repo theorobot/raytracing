@@ -1,8 +1,8 @@
 #ifndef HIT_RECORD_H
 #define HIT_RECORD_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 
 struct material;
 

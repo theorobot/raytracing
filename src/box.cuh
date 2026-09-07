@@ -1,8 +1,8 @@
 #ifndef BOX_H
 #define BOX_H
 
-#include "vec3.h"
-#include "ray.h"
+#include "vec3.cuh"
+#include "ray.cuh"
 
 struct box {
     vec3 bounds[2];

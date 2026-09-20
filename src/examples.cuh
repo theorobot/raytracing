@@ -3,12 +3,13 @@
 
 #include "scene.cuh"
 #include "camera.cuh"
+#include "bvh.cuh"
 
 void cornell_box(camera& cam, scene& world, uint32_t& seed) {
 	cam.width = 400;
 	cam.height = 400;
-	cam.samples_per_pixel = 50;
-    cam.samples_per_frame = 5;
+	cam.samples_per_pixel = 1800;
+    cam.samples_per_frame = 30;
 	cam.max_depth = 10;
 	cam.background_color = vec3(0.0f, 0.0f, 0.0f);
 	cam.vfov = 40.0f;
@@ -108,6 +109,25 @@ void teapots(camera& cam, scene& world, uint32_t& seed) {
     teapot_mat.set_lambertian(vec3(1.0f, 1.0f, 1.0f));
     headlight_mat.set_light(vec3(20.0f, 20.0f, 20.0f));
 
+    /* vec_mesh tp;
+    tp.load_obj("meshes/teapot.obj");
+    tp.mat = teapot_mat;
+    tp.set_bounding_box();
+    tp.set_normals();
+
+    std::vector<bvh_node> bvh = createBVH(tp);
+
+    for (int n = 0; n < bvh.size(); n++) {
+        std::cout << "BVH Node:  " << n << '\n';
+        std::cout << "Min bound: {" << bvh[n].bounds.bounds[0].x << ' ' << bvh[n].bounds.bounds[0].y << ' ' << bvh[n].bounds.bounds[0].z << "}\n";
+        std::cout << "Max bound: {" << bvh[n].bounds.bounds[1].x << ' ' << bvh[n].bounds.bounds[1].y << ' ' << bvh[n].bounds.bounds[1].z << "}\n";
+        std::cout << "Left idx:  " << bvh[n].left_idx << '\n';
+        std::cout << "Right idx: " << bvh[n].right_idx << '\n';
+        std::cout << "First tri: " << bvh[n].firstTri << '\n';
+        std::cout << "Tri count: " << bvh[n].triCount << '\n';
+        std::cout << '\n';
+    } */
+
 	for (int i = -10; i <= 10; i += 10) {
 		for (int j = -10; j <= 10; j += 10) {
 			vec_mesh teapot;
@@ -137,6 +157,56 @@ void teapots(camera& cam, scene& world, uint32_t& seed) {
     meshes.push_back(headlight);
 
 	std::vector<sphere> spheres;
+	std::vector<plane> planes;
+
+	create_scene(world, spheres, planes, meshes);
+}
+
+void cube(camera& cam, scene& world, uint32_t& seed) {
+	cam.width = 400;
+	cam.height = 400;
+	cam.samples_per_pixel = 1000;
+    cam.samples_per_frame = 1000;
+	cam.max_depth = 10;
+	cam.background_color = vec3(0.0f, 0.0f, 0.0f);
+	cam.vfov = 30.0f;
+	cam.lookfrom = vec3(10.0f, 10.0f, 20.0f);
+	cam.lookat = vec3(0.0f, 0.0f, 0.0f);
+	cam.vup = vec3(0.0f, 1.0f, 0.0f);
+	cam.defocus_angle = 0.0f;
+	cam.initialize();
+
+	std::vector<vec_mesh> meshes;
+
+    material cube_mat;
+    material light_mat;
+
+    cube_mat.set_lambertian(vec3(0.7f, 0.7f, 0.7f));
+    light_mat.set_light(vec3(5.0f, 5.0f, 5.0f));
+
+    vec_mesh cube;
+    cube.load_obj("meshes/cube.obj");
+    cube.mat = cube_mat;
+    cube.set_bounding_box();
+    cube.set_normals();
+
+    std::vector<bvh_node> bvh = createBVH(cube);
+    for (int n = 0; n < bvh.size(); n++) {
+        std::cout << "BVH Node:  " << n << '\n';
+        std::cout << "Left idx:  " << bvh[n].left_idx << '\n';
+        std::cout << "Right idx: " << bvh[n].right_idx << '\n';
+        std::cout << "First tri: " << bvh[n].firstTri << '\n';
+        std::cout << "Tri count: " << bvh[n].triCount << '\n';
+        std::cout << '\n';
+    }
+
+    meshes.push_back(cube);
+
+	std::vector<sphere> spheres;
+
+    sphere s_light(vec3(5.0f, 10.0f, 30.0f), 10.0f, light_mat);
+    spheres.push_back(s_light);
+
 	std::vector<plane> planes;
 
 	create_scene(world, spheres, planes, meshes);

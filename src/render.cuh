@@ -6,6 +6,7 @@
 #include "camera.cuh"
 #include "scene.cuh"
 #include "settings.cuh"
+#include "bvh.cuh"
 
 void write_image(vec3* colors, int width, int height, std::string file) {
 	std::vector<uint8_t> PNG_pixels(width * height * 4);
@@ -97,7 +98,7 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
 	cudaMalloc(&devFrame, cam.width*cam.height*sizeof(vec3));
 	cudaMemset(devFrame, 0, cam.width*cam.height*sizeof(vec3));
 
-	int blocks = cuda::ceil_div(cam.width*cam.height, num_threads);
+	int blocks = cuda::ceil_div(cam.width*cam.height, NUM_THREADS);
 
     std::chrono::high_resolution_clock::time_point first_start = std::chrono::high_resolution_clock::now();
 
@@ -106,7 +107,7 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
     for (int sample = 0; sample < cam.samples_per_pixel; sample += cam.samples_per_frame) {
         std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
-        setPixelsGPU<<<blocks, num_threads>>>(cam, world, devFrame, sample);
+        setPixelsGPU<<<blocks, NUM_THREADS>>>(cam, world, devFrame, sample);
 
         cudaError_t err = cudaDeviceSynchronize();
         if (err != cudaSuccess) std::cout << cudaGetErrorString(err) << '\n';
@@ -136,8 +137,17 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
 
 	write_image(frame, cam.width, cam.height, output_file);
 
-	cudaFree(frame);
+	free(frame);
+    cudaFree(new_frame);
 	cudaFree(devFrame);
+
+    std::vector<mesh> host_meshes(world.meshes.num_meshes);
+    cudaMemcpy(host_meshes.data(), world.meshes.meshes, world.meshes.num_meshes*sizeof(mesh), cudaMemcpyDeviceToHost);
+
+    for (const mesh& m : host_meshes) {
+        cudaFree(m.bvh);
+    }
+
 	cudaFree(world.spheres.spheres);
 	cudaFree(world.planes.planes);
     cudaFree(world.meshes.vertices);
@@ -167,14 +177,20 @@ void create_scene(scene& world, std::vector<sphere> spheres, std::vector<plane> 
 	std::vector<mesh> meshes;
     std::vector<vec3> vertices;
     std::vector<triangle> triangles;
+    std::vector<std::vector<bvh_node>> bvhs;
     int num_triangles = 0;
     int num_vertices = 0;
 	for (vec_mesh& vm : vec_meshes) {
+        std::vector<bvh_node> m_bvh = createBVH(vm);
+
 		mesh m;
         m.triangles_start = num_triangles;
         m.num_triangles = vm.triangles.size();
         m.mat = vm.mat;
-        m.bounding_box = vm.bounding_box;
+        
+        cudaMalloc(&m.bvh, m_bvh.size()*sizeof(bvh_node));
+        cudaMemcpy(m.bvh, m_bvh.data(), m_bvh.size()*sizeof(bvh_node), cudaMemcpyHostToDevice);
+
         meshes.push_back(m);
         vertices.insert(vertices.end(), vm.vertices.begin(), vm.vertices.end());
         triangles.insert(triangles.end(), vm.triangles.begin(), vm.triangles.end());

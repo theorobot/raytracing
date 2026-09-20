@@ -3,6 +3,7 @@
 
 #include "sphere.cuh"
 #include "plane.cuh"
+#include "vec_mesh.cuh"
 #include "mesh.cuh"
 #include "hit_record.cuh"
 

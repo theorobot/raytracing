@@ -24,9 +24,9 @@
 #define HEIGHT 225
 #define SAMPLES_PER_PIXEL 10;
 
-#define num_threads 256
+#define NUM_THREADS 256
 
-#define stack_size 8192
+#define STACK_SIZE 8192
 
 #define PI 3.14159265358979
 

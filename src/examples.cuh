@@ -8,11 +8,11 @@
 void cornell_box(camera& cam, scene& world, uint32_t& seed) {
 	cam.width = 400;
 	cam.height = 400;
-	cam.samples_per_pixel = 1800;
-    cam.samples_per_frame = 30;
+	cam.samples_per_pixel = 5000;
+    cam.samples_per_frame = 50;
 	cam.max_depth = 10;
 	cam.background_color = vec3(0.0f, 0.0f, 0.0f);
-	cam.vfov = 40.0f;
+	cam.vfov = 38.0f;
 	cam.lookfrom = vec3(278.0f, 278.0f, -800.0f);
 	cam.lookat = vec3(278.0f, 278.0f, 0.0f);
 	cam.vup = vec3(0.0f, 1.0f, 0.0f);

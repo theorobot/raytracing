@@ -12,9 +12,6 @@ box::box(const vec3& min, const vec3& max) {
 
 __host__ __device__ bool box::hit(const ray& r, float ray_tmin, float ray_tmax) const {
 	float tmin, tmax, tymin, tymax, tzmin, tzmax;
-	/* float divx = 1.0f / r.dir.x;
-    float divy = 1.0f / r.dir.y;
-    float divz = 1.0f / r.dir.z; */
 	if (r.dir.x >= 0.0f) {
 		tmin = (bounds[0].x - r.orig.x) * r.dir_rec.x;
 		tmax = (bounds[1].x - r.orig.x) * r.dir_rec.x;

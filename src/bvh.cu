@@ -47,7 +47,7 @@ std::vector<bvh_node> createBVH(vec_mesh& vm) {
 }
 
 void divideBVH(int bvh_idx, std::vector<bvh_node>& bvh, vec_mesh& vm) {
-    if (bvh[bvh_idx].triCount <= 1) return;
+    if (bvh[bvh_idx].triCount <= 3) return;
 
     float x_len = bvh[bvh_idx].bounds.bounds[1].x - bvh[bvh_idx].bounds.bounds[0].x;
     float y_len = bvh[bvh_idx].bounds.bounds[1].y - bvh[bvh_idx].bounds.bounds[0].y;
@@ -111,7 +111,6 @@ void divideBVH(int bvh_idx, std::vector<bvh_node>& bvh, vec_mesh& vm) {
     right_node.bounds = bvh_bounding_box(right_node, vm);
     bvh.push_back(right_node);
     bvh[bvh_idx].right_idx = bvh.size()-1;
-    // divideBVH(bvh[bvh_idx].right_idx, bvh, vm);
     divideBVH(bvh[bvh_idx].left_idx, bvh, vm);
     divideBVH(bvh[bvh_idx].right_idx, bvh, vm);
 }

@@ -105,8 +105,6 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
 	std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
 
     for (int sample = 0; sample < cam.samples_per_pixel; sample += cam.samples_per_frame) {
-        std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
-
         setPixelsGPU<<<blocks, NUM_THREADS>>>(cam, world, devFrame, sample);
 
         cudaError_t err = cudaDeviceSynchronize();
@@ -116,8 +114,10 @@ void raytrace(const scene& world, camera& cam, uint32_t& seed, std::string outpu
         std::chrono::duration<double> gpu_exec_time;
         gpu_exec_time = std::chrono::duration_cast<std::chrono::duration<double>>(end-start);
 
-        std::cout << "Finished " << sample+cam.samples_per_frame << "/" << cam.samples_per_pixel << " samples (" << 100*(sample+cam.samples_per_frame) / cam.samples_per_pixel << "%). Time taken: " << gpu_exec_time.count() << " seconds\n";
+        util::print_progress_bar(sample+cam.samples_per_frame, cam.samples_per_pixel, gpu_exec_time.count(), 50);
     }
+
+    std::cout << std::endl;
 
     std::chrono::high_resolution_clock::time_point final_end = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> total_exec_time;
